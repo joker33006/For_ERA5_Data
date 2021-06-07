@@ -1,0 +1,26 @@
+---
+title: "GLORIA ERA5 weather data"
+output: Word
+---
+# ERA5資料處理
+## 概述
+本專案檔是因應2021 GLORIA期中報告。主要目的是整理合歡奇萊區域以及南湖區域的氣候資料並繪圖。本專案檔並無涉及樣區土溫儀的資料，若要看土溫資料處理，請參考專案'GLORIA_weather_data_processing'。
+### Step 0. 調用package
+```{r}
+library(data.table)
+library(ggplot2)
+```
+## Step.1 基礎資料處理
+```{r}
+area <- c("HQM","NAH")
+file_name <-lapply(area,function(x){
+              list.files(paste0("Rawdata/ERA5_daily/",x),
+                          pattern=".csv")})
+HQM <-rbindlist(lapply(file_name[[1]],function(y){fread(
+    paste0("Rawdata/ERA5_daily/HQM/",y))}))
+NAH <-rbindlist(lapply(file_name[[2]],function(y){fread(
+    paste0("Rawdata/ERA5_daily/NAH/",y))})) 
+total <- rbind(HQM[,area:="HQM"],NAH[,area:='NAH'])  
+
+```
+
