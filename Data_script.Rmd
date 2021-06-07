@@ -21,6 +21,56 @@ HQM <-rbindlist(lapply(file_name[[1]],function(y){fread(
 NAH <-rbindlist(lapply(file_name[[2]],function(y){fread(
     paste0("Rawdata/ERA5_daily/NAH/",y))})) 
 total <- rbind(HQM[,area:="HQM"],NAH[,area:='NAH'])  
+colnames(total)[1:3] <- c("date","temp","rain")
+Sys.setlocale("LC_TIME", "English") #Set up the time format to English.
+total[,date:=as.Date(date,"%b %d,%Y")]
+total[,year:=year(date)][,month:=month(date)]
+#######loading the monthly data
+m_file <- list.files("Rawdata/ERA_monthly/")
+m_data <- lapply(m_file,function(x){fread(paste0("Rawdata/ERA_monthly/",x))})
+m_data[[1]][,area:="HQM"]
+m_data[[2]][,area:="NAH"]
+m_data_all <- rbindlist(m_data)
+colnames(m_data_all)[1:3] <- c("date","temp","rain")
+m_data_all[,date:=as.Date(date,format="%b %d, %Y")]
+m_data_all[,year:=year(date)][,month:=month(date)]
+m_data_all[,temp:=temp/10][,rain:=rain*1000]
+```
+## 作圖
+```{r}
+y_data <- m_data_all[,.(temp=mean(temp),rain=sum(rain)),
+                    by=.(year,area)][year!=2020]
+
+try(dir.create("plot_result/"))
+ggplot(y_data,aes(x=year,y=temp,color=area))+
+  geom_point()+
+  labs(x='Year',y=' annual average temperature (°C)')+
+  geom_smooth(aes(x=year,y=temp),method = lm)+
+  theme_classic()
+ggsave("plot_result/NAH_HQM_temp_1979_2019.jpeg",width = 8,height = 6,dpi=300)
+#########precipitation
+
+for (i in c("HQM","NAH")){
+  avg <- mean(y_data[area==`i`&year<2010,rain])
+ggplot(y_data[area==`i`,],aes(x=year,y=rain))+
+  geom_col(width = 0.5,fill='cyan4')+
+  labs(x='Year',y='Precipitation (mm)')+
+  geom_line(y=avg,linetype='dashed',
+            color='gray50')+
+    theme_classic()
+ggsave(paste0("plot_result/",i,"_rain_1979_2019.jpeg"),width = 4,height = 3,dpi=300)
+}
+```
+
+## 季節作圖
+
+```{r}
+m_data_all[month %in% 3:5,season:="Spring"][
+            month %in% 6:8,season:="Summer"][
+             month %in% 9:11,season:="Fall"][
+              is.na(season) ,season:="Winter"]
+
 
 ```
+
 
